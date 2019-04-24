@@ -1,5 +1,6 @@
 package com.chengmao.mapdemo;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ActivityOptions;
 import android.app.Notification;
@@ -11,28 +12,31 @@ import android.graphics.Color;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.AMapUtils;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.TextureMapView;
+import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.track.AMapTrackClient;
 import com.amap.api.track.ErrorCode;
 import com.amap.api.track.OnTrackLifecycleListener;
 import com.amap.api.track.TrackParam;
-import com.amap.api.track.query.model.AddTrackRequest;
-import com.amap.api.track.query.model.AddTrackResponse;
+import com.chengmao.mapdemo.bean.EndEvent;
+import com.chengmao.mapdemo.bean.LocationBean;
 import com.chengmao.mapdemo.bean.StartTrackBean;
+import com.chengmao.mapdemo.track.EndTrackActivity;
 import com.chengmao.mapdemo.track.SimpleOnTrackLifecycleListener;
-import com.chengmao.mapdemo.track.SimpleOnTrackListener;
 import com.chengmao.mapdemo.track.TrackListActivity;
+import com.cysion.baselib.base.BaseActivity;
 import com.cysion.baselib.cache.ACache;
 import com.cysion.baselib.net.Caller;
 import com.google.gson.Gson;
@@ -40,14 +44,19 @@ import com.tencent.mm.opensdk.modelmsg.SendAuth;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements AMap.OnMyLocationChangeListener {
+public class MainActivity extends BaseActivity implements AMap.OnMyLocationChangeListener {
     private static final String CHANNEL_ID_SERVICE_RUNNING = "CHANNEL_ID_SERVICE_RUNNING";
     private TextureMapView mMapView;
     private MyLocationStyle myLocationStyle;
@@ -64,8 +73,8 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
     private AMapTrackClient aMapTrackClient;
     private boolean isServiceRunning;
     private boolean isGatherRunning;
+    private boolean isPausing;
     private StartTrackBean startTrackBean;
-    private long trackId;
     private OnTrackLifecycleListener onTrackListener = new SimpleOnTrackLifecycleListener() {
         @Override
         public void onBindServiceCallback(int status, String msg) {
@@ -75,7 +84,6 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
         public void onStartTrackCallback(int status, String msg) {
             if (status == ErrorCode.TrackListen.START_TRACK_SUCEE || status == ErrorCode.TrackListen.START_TRACK_SUCEE_NO_NETWORK) {
                 // 成功启动
-                Log.e("flag--", "onStartTrackCallback(MainActivity.java:78)-->>" + "启动服务成功");
                 isServiceRunning = true;
                 startGather();
                 btnStatus();
@@ -85,31 +93,29 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
                 startGather();
                 btnStatus();
             } else {
+                Alert.obj().loaded();
             }
         }
 
         @Override
         public void onStopTrackCallback(int status, String msg) {
+            Alert.obj().loaded();
             if (status == ErrorCode.TrackListen.STOP_TRACK_SUCCE) {
                 // 成功停止
-                Toast.makeText(MainActivity.this, "停止服务成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "轨迹停止成功", Toast.LENGTH_SHORT).show();
                 isServiceRunning = false;
                 isGatherRunning = false;
-                submitEndTrack();
                 btnStatus();
-            } else {
             }
         }
 
         @Override
         public void onStartGatherCallback(int status, String msg) {
-            Log.e("flag--", "onStartGatherCallback(MainActivity.java:109)-->>" + msg);
+            Alert.obj().loaded();
             if (status == ErrorCode.TrackListen.START_GATHER_SUCEE) {
-//                Toast.makeText(MainActivity.this, "定位采集开启成功", Toast.LENGTH_SHORT).show();
                 isGatherRunning = true;
                 btnStatus();
             } else if (status == ErrorCode.TrackListen.START_GATHER_ALREADY_STARTED) {
-//                Toast.makeText(MainActivity.this, "定位采集已经开启", Toast.LENGTH_SHORT).show();
                 isGatherRunning = true;
                 btnStatus();
             } else {
@@ -119,42 +125,35 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
         @Override
         public void onStopGatherCallback(int status, String msg) {
             if (status == ErrorCode.TrackListen.STOP_GATHER_SUCCE) {
-                Toast.makeText(MainActivity.this, "定位采集停止成功", Toast.LENGTH_SHORT).show();
                 isGatherRunning = false;
                 aMapTrackClient.stopTrack(new TrackParam(startTrackBean.getServiceId(), startTrackBean.getTerminalId()), onTrackListener);
             } else {
+                Alert.obj().loaded();
             }
         }
     };
+    private long startTime;
+    private long currentTime = 0;
+    private Location oldLocation;
+    private float distance;
+    private Location startLocation;
+    @SuppressLint("HandlerLeak")
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            currentTime = currentTime + 1000;
+            tv_duration.setText(Util.mill2Hour(currentTime));
+        }
+    };
+    private Timer timer;
 
-    private void submitEndTrack() {
-        String signature = ACache.get(this).getAsString("signature");
-        Caller.obj().load(MapApi.class).end(signature, longitude + "," + latitude,
-                startTrackBean.getTrail_id(), startTrackBean.getTrail_name(), "", "1", "1").enqueue(new Callback<String>() {
-            @Override
-            public void onResponse(Call<String> call, Response<String> response) {
-                try {
-                    JSONObject jsonObject = new JSONObject(response.body());
-                    int status = jsonObject.getInt("status");
-                    if (status == 1) {
-                        Log.e("flag--", "onResponse(MainActivity.java:139)-->>" + "结束成功");
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<String> call, Throwable t) {
-
-            }
-        });
+    @Override
+    protected int getLayoutId() {
+        return R.layout.activity_main;
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    protected void initView(Bundle savedInstanceState) {
         mMapView = findViewById(R.id.mapView);
         pathBtn = findViewById(R.id.locationbtn);
         tv_name = findViewById(R.id.tv_name);
@@ -181,50 +180,44 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
                     int status = jsonObject.getInt("status");
                     if (status == 1) {
                         JSONObject data = jsonObject.getJSONObject("data");
+                        JSONObject type = data.getJSONObject("type");
                         Gson gson = new Gson();
                         startTrackBean = gson.fromJson(data.toString(), StartTrackBean.class);
                         if (startTrackBean == null) {
                             Toast.makeText(MainActivity.this, "数据返回异常，轨迹开启失败", Toast.LENGTH_SHORT).show();
                             return;
                         }
+                        startTrackBean.setType(type.toString());
                         startTrack();
                     } else {
                         Toast.makeText(MainActivity.this, "网络异常，轨迹开启失败", Toast.LENGTH_SHORT).show();
+                        Alert.obj().loaded();
                     }
                 } catch (JSONException e) {
                     Toast.makeText(MainActivity.this, "网络异常，轨迹开启失败", Toast.LENGTH_SHORT).show();
+                    Alert.obj().loaded();
                 }
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-
+                Alert.obj().loaded();
             }
         });
     }
 
     private void startGather() {
-        aMapTrackClient.setTrackId(trackId);
+        aMapTrackClient.setTrackId(startTrackBean.getTrackId());
         aMapTrackClient.startGather(onTrackListener);
     }
 
     private void startTrack() {
-        aMapTrackClient.addTrack(new AddTrackRequest(startTrackBean.getServiceId(), startTrackBean.getTerminalId()), new SimpleOnTrackListener() {
-            @Override
-            public void onAddTrackCallback(AddTrackResponse addTrackResponse) {
-                if (addTrackResponse.isSuccess()) {
-                    // trackId需要在启动服务后设置才能生效，因此这里不设置，而是在startGather之前设置了track id
-                    trackId = addTrackResponse.getTrid();
-                    TrackParam trackParam = new TrackParam(startTrackBean.getServiceId(), startTrackBean.getTerminalId());
-                    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        trackParam.setNotification(createNotification());
-                    }
-                    aMapTrackClient.startTrack(trackParam, onTrackListener);
-                } else {
-                    Toast.makeText(MainActivity.this, "网络请求失败，" + addTrackResponse.getErrorMsg(), Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        TrackParam trackParam = new TrackParam(startTrackBean.getServiceId(), startTrackBean.getTerminalId());
+        trackParam.setTrackId(startTrackBean.getTrackId());
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            trackParam.setNotification(createNotification());
+        }
+        aMapTrackClient.startTrack(trackParam, onTrackListener);
     }
 
 
@@ -238,11 +231,39 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
                     return;
                 }
                 if (isServiceRunning && isGatherRunning) {
-                    aMapTrackClient.stopGather(onTrackListener);
+                    if (startLocation == null || oldLocation == null) {
+                        Toast.makeText(MainActivity.this, "行程太短，无法记录轨迹，再走走", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    Intent intent = new Intent(MainActivity.this, EndTrackActivity.class);
+                    LocationBean startBean = new LocationBean();
+                    startBean.setLongitude(startLocation.getLongitude() + "");
+                    startBean.setLatitude(startLocation.getLatitude() + "");
+                    startBean.setAddress(getAddress(startLocation));
+                    LocationBean endBean = new LocationBean();
+                    endBean.setLongitude(oldLocation.getLongitude() + "");
+                    endBean.setLatitude(oldLocation.getLatitude() + "");
+                    endBean.setAddress(getAddress(oldLocation));
+                    intent.putExtra("start_location", startBean);
+                    intent.putExtra("end_location", endBean);
+                    intent.putExtra("track_bean", startTrackBean);
+                    startActivity(intent);
                 } else {
                     Alert.obj().loading(MainActivity.this);
                     getStartTrack();
+                    startTime = System.currentTimeMillis();
+                    tv_start_time.setText(Util.mills2Date(startTime));
+                    timer = new Timer();
+                    TimerTask timerTask = new TimerTask() {
+
+                        @Override
+                        public void run() {
+                            mHandler.sendEmptyMessage(111);
+                        }
+                    };
+                    timer.schedule(timerTask, 0, 1000);
                 }
+
             }
         });
         findViewById(R.id.tv_track_list).setOnClickListener(new View.OnClickListener() {
@@ -270,7 +291,7 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
 
         myLocationStyle = new MyLocationStyle();//初始化定位蓝点样式类
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE);//连续定位、且将视角移动到地图中心点，定位蓝点跟随设备移动。（1秒1次定位）
-        myLocationStyle.interval(2000);
+        myLocationStyle.interval(5000);
         myLocationStyle.showMyLocation(true);//设置定位蓝点的icon图标方法，需要用到BitmapDescriptor类对象作为参数。
         myLocationStyle.radiusFillColor(Color.parseColor("#33999999"));
         aMap.setMyLocationStyle(myLocationStyle);//设置定位蓝点的Style
@@ -308,7 +329,7 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
     }
 
     private void btnStatus() {
-        pathBtn.setText(isServiceRunning && isGatherRunning ? "轨迹结束" : "轨迹开始");
+        pathBtn.setText(isServiceRunning && isGatherRunning ? "轨迹暂停" : "轨迹开始");
         tv_desc.setText(isServiceRunning && isGatherRunning ? "轨迹记录中" : "轨迹已结束");
     }
 
@@ -353,6 +374,16 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
         if (location != null) {
             longitude = location.getLongitude();
             latitude = location.getLatitude();
+            if (isServiceRunning && isGatherRunning) {
+                if (oldLocation != null) {
+                    distance = distance + AMapUtils.calculateLineDistance(new LatLng(oldLocation.getLongitude(), oldLocation.getLatitude()), new LatLng(longitude, latitude));
+                } else {
+                    startLocation = location;
+                }
+                oldLocation = location;
+                String[] split = String.valueOf(distance).split("[.]");
+                tv_distance.setText(split[0]);
+            }
         }
     }
 
@@ -381,4 +412,25 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMyLocation
         return notification;
     }
 
+    private String getAddress(Location location) {
+        String[] split = location.toString().split("[#]");
+        for (int i = 0; i < split.length; i++) {
+            if (split[i].startsWith("address")) {
+                String[] split1 = split[i].split("[=]");
+                if (split1.length > 1) {
+                    return split1[1];
+                }
+            }
+        }
+        return "";
+    }
+
+    //仅用来声明默认接收方法的，实际不应该接收任何消息
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void fromEventBus(EndEvent event) {
+        aMapTrackClient.stopGather(onTrackListener);
+        timer.cancel();
+        timer = null;
+        currentTime = 0;
+    }
 }

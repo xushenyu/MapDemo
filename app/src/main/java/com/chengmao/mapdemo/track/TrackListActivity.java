@@ -1,5 +1,6 @@
 package com.chengmao.mapdemo.track;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -50,13 +51,17 @@ public class TrackListActivity extends AppCompatActivity {
                     JSONObject jsonObject = new JSONObject(response.body());
                     JSONObject data = jsonObject.getJSONObject("data");
                     Gson gson = new Gson();
-                    TrackListBean trackListBean = gson.fromJson(data.toString(), TrackListBean.class);
+                    final TrackListBean trackListBean = gson.fromJson(data.toString(), TrackListBean.class);
                     if (trackListBean.getTrail() != null) {
                         TackAdapter tackAdapter = new TackAdapter(TrackListActivity.this, trackListBean.getTrail());
                         tackAdapter.setOnItemClickListenet(new TackAdapter.OnItemClickListener() {
                             @Override
                             public void onItemClick(TrackListBean.TrailBean bean) {
-
+                                bean.setService_id(trackListBean.getServiceId());
+                                bean.setTermianl_id(trackListBean.getTerminalId());
+                                Intent intent = new Intent(TrackListActivity.this, TrackDetailActivity.class);
+                                intent.putExtra("track", bean);
+                                startActivity(intent);
                             }
                         });
                         rv_track.setAdapter(tackAdapter);

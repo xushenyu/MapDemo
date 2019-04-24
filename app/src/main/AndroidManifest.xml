@@ -55,7 +55,15 @@
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <activity android:name=".track.TrackListActivity" />
+        <activity
+            android:name=".track.TrackListActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".track.TrackDetailActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".track.EndTrackActivity"
+            android:screenOrientation="portrait" />
 
         <service android:name="com.amap.api.location.APSService"></service>
         <service android:name="com.amap.api.track.AMapTrackService" />

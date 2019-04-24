@@ -64,7 +64,6 @@ public class WXEntryActivity extends Activity implements IWXAPIEventHandler {
                         //拿到了微信返回的code,立马再去请求access_token
                         String code = ((SendAuth.Resp) resp).code;
                         //就在这个地方，用网络库什么的或者自己封的网络api，发请求去咯，注意是get请求
-                        Alert.obj().loading(this);
                         WXCaller.obj().load(MapApi.class).wxMsg("wxd54b71fe57741edc", "f337d8c5958eb66b9d85da29fa1c0ff5", code, "authorization_code").enqueue(new Callback<String>() {
                             @Override
                             public void onResponse(Call<String> call, Response<String> response) {

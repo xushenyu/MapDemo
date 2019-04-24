@@ -2,13 +2,14 @@ package com.chengmao.mapdemo.bean;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by xsy on 2019/4/20 0020.
  */
 
-public class TrackListBean {
+public class TrackListBean implements Serializable {
 
     /**
      * type : {"1":"步行","2":"骑行","3":"驾车","4":"其他"}
@@ -18,8 +19,8 @@ public class TrackListBean {
      */
 
     private TypeBean type;
-    private int serviceId;
-    private int terminalId;
+    private long serviceId;
+    private long terminalId;
     private List<TrailBean> trail;
 
     public TypeBean getType() {
@@ -30,19 +31,19 @@ public class TrackListBean {
         this.type = type;
     }
 
-    public int getServiceId() {
+    public long getServiceId() {
         return serviceId;
     }
 
-    public void setServiceId(int serviceId) {
+    public void setServiceId(long serviceId) {
         this.serviceId = serviceId;
     }
 
-    public int getTerminalId() {
+    public long getTerminalId() {
         return terminalId;
     }
 
-    public void setTerminalId(int terminalId) {
+    public void setTerminalId(long terminalId) {
         this.terminalId = terminalId;
     }
 
@@ -104,7 +105,7 @@ public class TrackListBean {
         }
     }
 
-    public static class TrailBean {
+    public static class TrailBean implements Serializable {
         /**
          * trail_id : 2
          * name : Sean在2019-04-18 16:48生成的轨迹
@@ -124,6 +125,24 @@ public class TrackListBean {
         private String end_coords;
         private String start;
         private String end;
+        private long service_id;
+        private long termianl_id;
+
+        public long getService_id() {
+            return service_id;
+        }
+
+        public void setService_id(long service_id) {
+            this.service_id = service_id;
+        }
+
+        public long getTermianl_id() {
+            return termianl_id;
+        }
+
+        public void setTermianl_id(long termianl_id) {
+            this.termianl_id = termianl_id;
+        }
 
         public int getTrail_id() {
             return trail_id;
