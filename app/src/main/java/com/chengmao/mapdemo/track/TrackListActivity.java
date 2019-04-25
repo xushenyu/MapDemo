@@ -99,7 +99,7 @@ public class TrackListActivity extends AppCompatActivity {
                     JSONObject data = jsonObject.getJSONObject("data");
                     Gson gson = new Gson();
                     trackListBean = gson.fromJson(data.toString(), TrackListBean.class);
-                    if (trackListBean != null)
+                    if (trackListBean != null && trackListBean.getTrail() != null)
                         mList.addAll(trackListBean.getTrail());
                     tackAdapter.notifyDataSetChanged();
                     setLoadMoreEnable();
@@ -131,6 +131,9 @@ public class TrackListActivity extends AppCompatActivity {
                     JSONObject data = jsonObject.getJSONObject("data");
                     Gson gson = new Gson();
                     trackListBean = gson.fromJson(data.toString(), TrackListBean.class);
+                    if (trackListBean.getTrail() == null) {
+                        return;
+                    }
                     mList.clear();
                     mList.addAll(trackListBean.getTrail());
                     tackAdapter.notifyDataSetChanged();

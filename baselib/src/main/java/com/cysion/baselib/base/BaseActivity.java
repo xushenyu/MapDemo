@@ -31,7 +31,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
         ActivityManager.getInstance().addActivity(this);
         EventBus.getDefault().register(this);
-        initView();
+        initView(savedInstanceState);
         initData();
     }
 
@@ -65,7 +65,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     protected abstract int getLayoutId();
 
-    protected abstract void initView();
+    protected abstract void initView(Bundle savedInstanceState);
 
     protected void initData(){}
 

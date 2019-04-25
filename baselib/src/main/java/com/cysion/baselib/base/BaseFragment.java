@@ -39,7 +39,7 @@ public abstract class BaseFragment extends Fragment {
         EventBus.getDefault().register(this);
         mRootView = inflater.inflate(getLayoutId(), container, false);
         mUnbinder = ButterKnife.bind(this,mRootView);
-        initViews();
+        initViews(mRootView,savedInstanceState);
         initData();
         return mRootView;
     }
@@ -104,7 +104,7 @@ public abstract class BaseFragment extends Fragment {
 
     protected abstract int getLayoutId();
 
-    protected abstract void initViews();
+    protected abstract void initViews(View view, Bundle savedInstanceState);
 
     protected  void initData(){};
 }

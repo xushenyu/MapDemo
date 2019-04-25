@@ -50,7 +50,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -143,7 +143,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     private long startTime;
     private long currentTime = 0;
     private Location oldLocation;
-    private float distance;
+    private int distance;
     private Location startLocation;
     @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
@@ -300,7 +300,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         intent.putExtra("start_location", startBean);
         intent.putExtra("end_location", endBean);
         intent.putExtra("track_bean", startTrackBean);
-        intent.putExtra("space", distance);
+        intent.putExtra("space", fixDistance(distance));
         intent.putExtra("time", currentTime / 1000);
         startActivity(intent);
     }
@@ -308,7 +308,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     private void initMap() {
         // 不要使用Activity作为Context传入
         aMapTrackClient = new AMapTrackClient(getApplicationContext());
-        aMapTrackClient.setInterval(5, 30);
+        aMapTrackClient.setInterval(2, 20);
 
         if (aMap == null) {
             aMap = mMapView.getMap();
@@ -317,7 +317,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
 
         myLocationStyle = new MyLocationStyle();//初始化定位蓝点样式类
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE);//连续定位、且将视角移动到地图中心点，定位蓝点跟随设备移动。（1秒1次定位）
-        myLocationStyle.interval(5000);
+        myLocationStyle.interval(2000);
         myLocationStyle.showMyLocation(true);//设置定位蓝点的icon图标方法，需要用到BitmapDescriptor类对象作为参数。
         myLocationStyle.radiusFillColor(Color.parseColor("#33999999"));
         aMap.setMyLocationStyle(myLocationStyle);//设置定位蓝点的Style
@@ -417,14 +417,14 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
             if (isServiceRunning && isGatherRunning) {
                 if (oldLocation != null) {
                     float f = AMapUtils.calculateLineDistance(new LatLng(oldLocation.getLatitude(), oldLocation.getLongitude()), new LatLng(latitude, longitude));
-                    BigDecimal b = new BigDecimal(f);
-                    float f1 = b.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                    int f1 = fixDistance(f);
                     distance = distance + f1;
+//                    Toast.makeText(self, f + "=====" + f1 + "====" + fixDistance(distance), Toast.LENGTH_SHORT).show();
                 } else {
                     startLocation = location;
                 }
                 oldLocation = location;
-                tv_distance.setText(distance + "");
+                tv_distance.setText(fixDistance(distance) + "");
             }
         }
     }
@@ -483,5 +483,11 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         aMapTrackClient.stopGather(onTrackListener);
         timer.cancel();
         timer = null;
+    }
+
+    private int fixDistance(float f) {
+        DecimalFormat b = new DecimalFormat("0");
+        Integer integer = Integer.valueOf(b.format(f));
+        return integer;
     }
 }
