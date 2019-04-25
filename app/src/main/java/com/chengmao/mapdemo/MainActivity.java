@@ -300,7 +300,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         intent.putExtra("start_location", startBean);
         intent.putExtra("end_location", endBean);
         intent.putExtra("track_bean", startTrackBean);
-        intent.putExtra("space", fixDistance(distance));
+        intent.putExtra("space", distance);
         intent.putExtra("time", currentTime / 1000);
         startActivity(intent);
     }
@@ -417,14 +417,15 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
             if (isServiceRunning && isGatherRunning) {
                 if (oldLocation != null) {
                     float f = AMapUtils.calculateLineDistance(new LatLng(oldLocation.getLatitude(), oldLocation.getLongitude()), new LatLng(latitude, longitude));
-                    int f1 = fixDistance(f);
+                    int f1 = (int) f;
+//                    int f1 = fixDistance(f);
                     distance = distance + f1;
-//                    Toast.makeText(self, f + "=====" + f1 + "====" + fixDistance(distance), Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(self, f + "====" + f1 + "====" + fixDistance(distance), Toast.LENGTH_SHORT).show();
                 } else {
                     startLocation = location;
                 }
                 oldLocation = location;
-                tv_distance.setText(fixDistance(distance) + "");
+                tv_distance.setText(distance + "");
             }
         }
     }
