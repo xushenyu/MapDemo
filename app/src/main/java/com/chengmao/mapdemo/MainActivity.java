@@ -404,6 +404,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     protected void onDestroy() {
         super.onDestroy();
         mMapView.onDestroy();
+        aMapTrackClient.stopGather(onTrackListener);
     }
 
     @Override
