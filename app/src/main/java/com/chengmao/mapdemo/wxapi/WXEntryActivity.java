@@ -115,7 +115,7 @@ public class WXEntryActivity extends Activity implements IWXAPIEventHandler {
         });
     }
 
-    private void getSignature(WXToken token, UserInfo info) {
+    private void getSignature(WXToken token, final UserInfo info) {
         Caller.obj().load(MapApi.class).getSignature(info.getNickname(), info.getHeadimgurl(), info.getSex(),
                 info.getCity(), info.getProvince(), info.getCountry(), info.getOpenid(),
                 info.getUnionid(), token.getAccess_token(), token.getRefresh_token(), token.getExpires_in()).enqueue(new Callback<String>() {
@@ -127,6 +127,7 @@ public class WXEntryActivity extends Activity implements IWXAPIEventHandler {
                     JSONObject data = jsonObject.getJSONObject("data");
                     String signature = data.getString("signature");
                     ACache.get(WXEntryActivity.this).put("signature", signature);
+                    ACache.get(WXEntryActivity.this).put("nickname", info.getNickname());
                     Toast.makeText(WXEntryActivity.this, "登录成功", Toast.LENGTH_SHORT).show();
                 } catch (JSONException e) {
                     e.printStackTrace();

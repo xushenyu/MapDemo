@@ -66,6 +66,7 @@ public class MarkActivity extends AppCompatActivity {
     private TextView tv_size;
     private int type_position;
     private int size_position;
+    private String trailId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -73,6 +74,7 @@ public class MarkActivity extends AppCompatActivity {
         setContentView(R.layout.activity_mark);
         double longitude = getIntent().getDoubleExtra("longitude", 116.4417);
         double latitude = getIntent().getDoubleExtra("latitude", 39.92318);
+        trailId = getIntent().getStringExtra("trail_id");
         coords = longitude + "," + latitude;
         mDoorImage = findViewById(R.id.grid_door);
         mRoomImage = findViewById(R.id.grid_room);
@@ -125,7 +127,7 @@ public class MarkActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MarkActivity.this, StoreTypeActivity.class);
                 intent.putExtra("page", 1);
-                intent.putExtra("item",tv_type.getText().toString().trim());
+                intent.putExtra("item", tv_type.getText().toString().trim());
                 startActivityForResult(intent, 101);
             }
         });
@@ -134,7 +136,7 @@ public class MarkActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MarkActivity.this, StoreTypeActivity.class);
                 intent.putExtra("page", 2);
-                intent.putExtra("item",tv_size.getText().toString().trim());
+                intent.putExtra("item", tv_size.getText().toString().trim());
                 startActivityForResult(intent, 102);
             }
         });
@@ -218,10 +220,10 @@ public class MarkActivity extends AppCompatActivity {
             if (requestCode == 101) {
                 tv_type.setText(data.getStringExtra("name"));
                 type_position = data.getIntExtra("position", 1);
-            }else if (requestCode == 102){
+            } else if (requestCode == 102) {
                 tv_size.setText(data.getStringExtra("name"));
                 size_position = data.getIntExtra("position", 1);
-            }else {
+            } else {
                 List<String> path = data.getStringArrayListExtra(MultiImageSelectorActivity.EXTRA_RESULT);
                 compressWithLs(path, requestCode);
             }
@@ -331,6 +333,7 @@ public class MarkActivity extends AppCompatActivity {
         map.put("type", (type_position + 1) + "");
         map.put("size", (size_position + 1) + "");
         map.put("source", "3");
+        map.put("trail_id", trailId);
         map.put("json", "1");
         loading.setVisibility(View.VISIBLE);
         Log.e("flag--", "submit(MarkActivity.java:224)-->>" + new JSONObject(map).toString());

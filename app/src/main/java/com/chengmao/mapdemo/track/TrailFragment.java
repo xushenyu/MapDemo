@@ -3,6 +3,7 @@ package com.chengmao.mapdemo.track;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.amap.api.maps.CameraUpdateFactory;
@@ -37,6 +38,10 @@ public class TrailFragment extends BaseFragment {
     private AMapTrackClient aMapTrackClient;
     private List<Polyline> polylines = new LinkedList<>();
     private List<Marker> endMarkers = new LinkedList<>();
+    private TextView tv_distance;
+    private TextView tv_duration;
+    private TextView tv_time;
+    private TextView tv_desc;
 
     @Override
     protected int getLayoutId() {
@@ -46,6 +51,12 @@ public class TrailFragment extends BaseFragment {
     @Override
     protected void initViews(View view, Bundle savedInstanceState) {
         track = (TrackListBean.TrailBean) getArguments().get("track");
+        tv_distance = view.findViewById(R.id.tv_distance);
+        tv_duration = view.findViewById(R.id.tv_duration);
+        tv_time = view.findViewById(R.id.tv_time);
+        tv_duration.setText(track.getTime());
+        tv_time.setText(track.getStart());
+        tv_desc = view.findViewById(R.id.tv_desc);
         aMapTrackClient = new AMapTrackClient(mActivity.getApplicationContext());
         mapView = view.findViewById(R.id.trail_map);
         mapView.onCreate(savedInstanceState);
@@ -57,7 +68,7 @@ public class TrailFragment extends BaseFragment {
                 System.currentTimeMillis() - 12 * 60 * 60 * 1000,
                 System.currentTimeMillis(),
                 0,      // 不启用去噪
-                1,   // 绑路
+                0,   // 绑路
                 0,      // 不进行精度过滤
                 DriveMode.DRIVING,  // 当前仅支持驾车模式
                 0,     // 距离补偿
@@ -82,15 +93,11 @@ public class TrailFragment extends BaseFragment {
                         }
                         if (allEmpty) {
                             Toast.makeText(mActivity,
-                                    "所有轨迹都无轨迹点，请尝试放宽过滤限制，如：关闭绑路模式", Toast.LENGTH_SHORT).show();
+                                    "距离太短，未记录到轨迹", Toast.LENGTH_SHORT).show();
                         } else {
-                            StringBuilder sb = new StringBuilder();
-                            sb.append("共查询到").append(tracks.size()).append("条轨迹，每条轨迹行驶距离分别为：");
                             for (Track track : tracks) {
-                                sb.append(track.getDistance()).append("m,");
+                                tv_distance.setText(track.getDistance() + "");
                             }
-                            sb.deleteCharAt(sb.length() - 1);
-                            Toast.makeText(mActivity, sb.toString(), Toast.LENGTH_SHORT).show();
                         }
                     } else {
                         Toast.makeText(mActivity, "未获取到轨迹", Toast.LENGTH_SHORT).show();

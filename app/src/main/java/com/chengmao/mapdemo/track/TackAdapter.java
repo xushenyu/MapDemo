@@ -42,8 +42,10 @@ public class TackAdapter extends RecyclerView.Adapter {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         TrackHolder viewHolder = (TrackHolder) holder;
-        viewHolder.tv_name.setText(mList.get(position).getName());
-        viewHolder.tv_time.setText(mList.get(position).getStart());
+        TrackListBean.TrailBean trailBean = mList.get(position);
+        viewHolder.tv_name.setText(trailBean.getName());
+        viewHolder.tv_time.setText(trailBean.getStart());
+        viewHolder.tv_distance.setText(trailBean.getSpace() + "，" + trailBean.getTime() + "，" + trailBean.getDotnum() + "个标记点");
         viewHolder.view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

@@ -127,6 +127,33 @@ public class TrackListBean implements Serializable {
         private String end;
         private long service_id;
         private long termianl_id;
+        private String space;
+        private String time;
+        private String dotnum;
+
+        public String getSpace() {
+            return space;
+        }
+
+        public void setSpace(String space) {
+            this.space = space;
+        }
+
+        public String getTime() {
+            return time;
+        }
+
+        public void setTime(String time) {
+            this.time = time;
+        }
+
+        public String getDotnum() {
+            return dotnum;
+        }
+
+        public void setDotnum(String dotnum) {
+            this.dotnum = dotnum;
+        }
 
         public long getService_id() {
             return service_id;

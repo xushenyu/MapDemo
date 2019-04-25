@@ -17,6 +17,7 @@ import android.os.Message;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,6 +50,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -85,11 +87,13 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
             if (status == ErrorCode.TrackListen.START_TRACK_SUCEE || status == ErrorCode.TrackListen.START_TRACK_SUCEE_NO_NETWORK) {
                 // 成功启动
                 isServiceRunning = true;
+                isPausing = false;
                 startGather();
                 btnStatus();
             } else if (status == ErrorCode.TrackListen.START_TRACK_ALREADY_STARTED) {
                 // 已经启动
                 isServiceRunning = true;
+                isPausing = false;
                 startGather();
                 btnStatus();
             } else {
@@ -102,9 +106,10 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
             Alert.obj().loaded();
             if (status == ErrorCode.TrackListen.STOP_TRACK_SUCCE) {
                 // 成功停止
-                Toast.makeText(MainActivity.this, "轨迹停止成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "轨迹暂停", Toast.LENGTH_SHORT).show();
                 isServiceRunning = false;
                 isGatherRunning = false;
+                isPausing = true;
                 btnStatus();
             }
         }
@@ -114,9 +119,11 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
             Alert.obj().loaded();
             if (status == ErrorCode.TrackListen.START_GATHER_SUCEE) {
                 isGatherRunning = true;
+                isPausing = false;
                 btnStatus();
             } else if (status == ErrorCode.TrackListen.START_GATHER_ALREADY_STARTED) {
                 isGatherRunning = true;
+                isPausing = false;
                 btnStatus();
             } else {
             }
@@ -126,6 +133,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         public void onStopGatherCallback(int status, String msg) {
             if (status == ErrorCode.TrackListen.STOP_GATHER_SUCCE) {
                 isGatherRunning = false;
+                isPausing = true;
                 aMapTrackClient.stopTrack(new TrackParam(startTrackBean.getServiceId(), startTrackBean.getTerminalId()), onTrackListener);
             } else {
                 Alert.obj().loaded();
@@ -146,6 +154,9 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         }
     };
     private Timer timer;
+    private Button btn_end;
+    private LinearLayout ll_track;
+    private String trailId;
 
     @Override
     protected int getLayoutId() {
@@ -161,6 +172,8 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         tv_start_time = findViewById(R.id.tv_start_time);
         tv_duration = findViewById(R.id.tv_duration);
         tv_distance = findViewById(R.id.tv_distance);
+        btn_end = findViewById(R.id.btn_end);
+        ll_track = findViewById(R.id.ll_track);
         mMapView.onCreate(savedInstanceState);// 此方法必须重写
         initMap();
         //AppConst.WEIXIN.APP_ID是指你应用在微信开放平台上的AppID，记得替换。
@@ -188,6 +201,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
                             return;
                         }
                         startTrackBean.setType(type.toString());
+                        trailId = startTrackBean.getTrail_id();
                         startTrack();
                     } else {
                         Toast.makeText(MainActivity.this, "网络异常，轨迹开启失败", Toast.LENGTH_SHORT).show();
@@ -231,23 +245,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
                     return;
                 }
                 if (isServiceRunning && isGatherRunning) {
-                    if (startLocation == null || oldLocation == null) {
-                        Toast.makeText(MainActivity.this, "行程太短，无法记录轨迹，再走走", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    Intent intent = new Intent(MainActivity.this, EndTrackActivity.class);
-                    LocationBean startBean = new LocationBean();
-                    startBean.setLongitude(startLocation.getLongitude() + "");
-                    startBean.setLatitude(startLocation.getLatitude() + "");
-                    startBean.setAddress(getAddress(startLocation));
-                    LocationBean endBean = new LocationBean();
-                    endBean.setLongitude(oldLocation.getLongitude() + "");
-                    endBean.setLatitude(oldLocation.getLatitude() + "");
-                    endBean.setAddress(getAddress(oldLocation));
-                    intent.putExtra("start_location", startBean);
-                    intent.putExtra("end_location", endBean);
-                    intent.putExtra("track_bean", startTrackBean);
-                    startActivity(intent);
+                    pauseRecordTrack();
                 } else {
                     Alert.obj().loading(MainActivity.this);
                     getStartTrack();
@@ -277,6 +275,34 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
                 startActivity(new Intent(MainActivity.this, TrackListActivity.class));
             }
         });
+        btn_end.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startEndAct();
+            }
+        });
+    }
+
+    private void startEndAct() {
+        if (startLocation == null || oldLocation == null) {
+            Toast.makeText(MainActivity.this, "行程太短，无法记录轨迹，再走走", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(MainActivity.this, EndTrackActivity.class);
+        LocationBean startBean = new LocationBean();
+        startBean.setLongitude(startLocation.getLongitude() + "");
+        startBean.setLatitude(startLocation.getLatitude() + "");
+        startBean.setAddress(getAddress(startLocation));
+        LocationBean endBean = new LocationBean();
+        endBean.setLongitude(oldLocation.getLongitude() + "");
+        endBean.setLatitude(oldLocation.getLatitude() + "");
+        endBean.setAddress(getAddress(oldLocation));
+        intent.putExtra("start_location", startBean);
+        intent.putExtra("end_location", endBean);
+        intent.putExtra("track_bean", startTrackBean);
+        intent.putExtra("space", distance);
+        intent.putExtra("time", currentTime / 1000);
+        startActivity(intent);
     }
 
     private void initMap() {
@@ -313,6 +339,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         Intent intent = new Intent(this, MarkActivity.class);
         intent.putExtra("longitude", longitude);
         intent.putExtra("latitude", latitude);
+        intent.putExtra("trail_id", trailId);
         startActivity(intent, ActivityOptions.
                 makeSceneTransitionAnimation(this, view, "mark").toBundle());
     }
@@ -329,8 +356,18 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     }
 
     private void btnStatus() {
-        pathBtn.setText(isServiceRunning && isGatherRunning ? "轨迹暂停" : "轨迹开始");
+        if (isServiceRunning && isGatherRunning) {
+            pathBtn.setText("轨迹暂停");
+        } else {
+            if (isPausing) {
+                pathBtn.setText("轨迹继续");
+            } else {
+                pathBtn.setText("轨迹开始");
+            }
+        }
+        ll_track.setVisibility(!isPausing && !isServiceRunning && !isGatherRunning ? View.GONE : View.VISIBLE);
         tv_desc.setText(isServiceRunning && isGatherRunning ? "轨迹记录中" : "轨迹已结束");
+        btn_end.setVisibility(isPausing ? View.VISIBLE : View.GONE);
     }
 
     /**
@@ -371,18 +408,23 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
 
     @Override
     public void onMyLocationChange(Location location) {
+        String nickname = ACache.get(this).getAsString("nickname");
+        if (!TextUtils.isEmpty(nickname))
+            tv_name.setText(nickname);
         if (location != null) {
             longitude = location.getLongitude();
             latitude = location.getLatitude();
             if (isServiceRunning && isGatherRunning) {
                 if (oldLocation != null) {
-                    distance = distance + AMapUtils.calculateLineDistance(new LatLng(oldLocation.getLongitude(), oldLocation.getLatitude()), new LatLng(longitude, latitude));
+                    float f = AMapUtils.calculateLineDistance(new LatLng(oldLocation.getLatitude(), oldLocation.getLongitude()), new LatLng(latitude, longitude));
+                    BigDecimal b = new BigDecimal(f);
+                    float f1 = b.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                    distance = distance + f1;
                 } else {
                     startLocation = location;
                 }
                 oldLocation = location;
-                String[] split = String.valueOf(distance).split("[.]");
-                tv_distance.setText(split[0]);
+                tv_distance.setText(distance + "");
             }
         }
     }
@@ -428,9 +470,18 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     //仅用来声明默认接收方法的，实际不应该接收任何消息
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void fromEventBus(EndEvent event) {
+        currentTime = 0;
+        distance = 0;
+        trailId = "";
+        isPausing = false;
+        tv_distance.setText("0.0");
+        btnStatus();
+    }
+
+    //暂停
+    private void pauseRecordTrack() {
         aMapTrackClient.stopGather(onTrackListener);
         timer.cancel();
         timer = null;
-        currentTime = 0;
     }
 }

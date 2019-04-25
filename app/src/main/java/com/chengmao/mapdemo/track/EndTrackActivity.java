@@ -54,6 +54,8 @@ public class EndTrackActivity extends BaseActivity {
     private int mType = 1;
     private String name;
     private EditText et_desc;
+    private float space;
+    private long time;
 
     @Override
     protected int getLayoutId() {
@@ -66,6 +68,8 @@ public class EndTrackActivity extends BaseActivity {
         start_location = (LocationBean) intent.getSerializableExtra("start_location");
         end_location = (LocationBean) intent.getSerializableExtra("end_location");
         startTrackBean = (StartTrackBean) intent.getSerializableExtra("track_bean");
+        space = intent.getFloatExtra("space", 0);
+        time = intent.getLongExtra("time", 0);
         et_name = findViewById(R.id.et_name);
         tv_type = findViewById(R.id.tv_type);
         tv_start_point = findViewById(R.id.tv_start_point);
@@ -131,7 +135,7 @@ public class EndTrackActivity extends BaseActivity {
         }
         String signature = ACache.get(this).getAsString("signature");
         Caller.obj().load(MapApi.class).end(signature, end_location.getLongitude() + "," + end_location.getLatitude(),
-                startTrackBean.getTrail_id(), name, et_desc.getText().toString().trim(), mType + "", "1").enqueue(new Callback<String>() {
+                startTrackBean.getTrail_id(), name, et_desc.getText().toString().trim(), mType + "", space, time, "1").enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 Alert.obj().loaded();

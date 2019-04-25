@@ -38,8 +38,13 @@ public interface MapApi {
     Call<String> start(@Query("signature") String signature, @Query("start_coords") String start_coords);
 
     @GET("amap/?l=api.end")
-    Call<String> end(@Query("signature") String signature, @Query("end_coords") String end_coords, @Query("trail_id") String trail_id, @Query("name") String name, @Query("desc") String desc, @Query("type") String type, @Query("json") String json);
+    Call<String> end(@Query("signature") String signature, @Query("end_coords") String end_coords,
+                     @Query("trail_id") String trail_id, @Query("name") String name,
+                     @Query("desc") String desc, @Query("type") String type, @Query("space") float space, @Query("time") long time, @Query("json") String json);
 
     @GET("amap/?l=api.trail")
-    Call<String> trackList(@Query("signature") String signature);
+    Call<String> trackList(@Query("signature") String signature, @Query("pg") int pg);
+
+    @GET("dot/?l=tool.getFoot")
+    Call<String> pointList(@Query("signature") String signature, @Query("trail_id") String trail_id, @Query("pg") int pg);
 }
