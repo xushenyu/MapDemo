@@ -40,7 +40,7 @@ public interface MapApi {
     @GET("amap/?l=api.end")
     Call<String> end(@Query("signature") String signature, @Query("end_coords") String end_coords,
                      @Query("trail_id") String trail_id, @Query("name") String name,
-                     @Query("desc") String desc, @Query("type") String type, @Query("space") float space, @Query("time") long time, @Query("json") String json);
+                     @Query("desc") String desc, @Query("type") String type, @Query("space") String space, @Query("time") long time, @Query("json") String json);
 
     @GET("amap/?l=api.trail")
     Call<String> trackList(@Query("signature") String signature, @Query("pg") int pg);

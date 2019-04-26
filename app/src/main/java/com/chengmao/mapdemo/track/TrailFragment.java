@@ -65,7 +65,7 @@ public class TrailFragment extends BaseFragment {
                 track.getService_id(),
                 track.getTermianl_id(),
                 track.getTrackId(),     // 轨迹id，不指定，查询所有轨迹，注意分页仅在查询特定轨迹id时生效，查询所有轨迹时无法对轨迹点进行分页
-                System.currentTimeMillis() - 12 * 60 * 60 * 1000,
+                System.currentTimeMillis() - 24 * 60 * 60 * 1000,
                 System.currentTimeMillis(),
                 0,      // 不启用去噪
                 0,   // 绑路

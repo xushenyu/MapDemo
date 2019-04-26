@@ -43,7 +43,7 @@ public class TrackDetailActivity extends AppCompatActivity {
         titles.add("地图");
         titles.add("打点");
         List<Fragment> fragments = new ArrayList<>();
-        TrailFragment trailFragment = new TrailFragment();
+        TrackWebFragment trailFragment = new TrackWebFragment();
         Bundle bundle = new Bundle();
         bundle.putSerializable("track", track);
         trailFragment.setArguments(bundle);

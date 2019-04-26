@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -50,7 +51,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.DecimalFormat;
+import java.math.BigDecimal;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -143,7 +144,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     private long startTime;
     private long currentTime = 0;
     private Location oldLocation;
-    private int distance;
+    private float distance;
     private Location startLocation;
     @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
@@ -300,7 +301,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         intent.putExtra("start_location", startBean);
         intent.putExtra("end_location", endBean);
         intent.putExtra("track_bean", startTrackBean);
-        intent.putExtra("space", distance);
+        intent.putExtra("space", fixDistance(distance));
         intent.putExtra("time", currentTime / 1000);
         startActivity(intent);
     }
@@ -418,15 +419,14 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
             if (isServiceRunning && isGatherRunning) {
                 if (oldLocation != null) {
                     float f = AMapUtils.calculateLineDistance(new LatLng(oldLocation.getLatitude(), oldLocation.getLongitude()), new LatLng(latitude, longitude));
-                    int f1 = (int) f;
-//                    int f1 = fixDistance(f);
-                    distance = distance + f1;
-//                    Toast.makeText(self, f + "====" + f1 + "====" + fixDistance(distance), Toast.LENGTH_SHORT).show();
+                    distance = distance + f;
+//                    Toast.makeText(self, f + "====" + fixDistance(f) + "====" + fixDistance(distance), Toast.LENGTH_SHORT).show();
+                    Log.e("flag--","onMyLocationChange(MainActivity.java:423)-->>"+f + "====" + fixDistance(f) + "====" + fixDistance(distance));
                 } else {
                     startLocation = location;
                 }
                 oldLocation = location;
-                tv_distance.setText(distance + "");
+                tv_distance.setText(fixDistance(distance));
             }
         }
     }
@@ -487,9 +487,13 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
         timer = null;
     }
 
-    private int fixDistance(float f) {
-        DecimalFormat b = new DecimalFormat("0");
-        Integer integer = Integer.valueOf(b.format(f));
-        return integer;
+    private String fixDistance(float f) {
+        BigDecimal d1 = new BigDecimal(Double.toString(f));
+        BigDecimal d2 = new BigDecimal(Integer.toString(1));
+        // 四舍五入,保留2位小数
+        return d1.divide(d2,1,BigDecimal.ROUND_HALF_UP).toString();
+//        BigDecimal num = new BigDecimal(f);
+//        DecimalFormat df = new DecimalFormat("0.0");
+//        String res = df.format(num);
     }
 }
