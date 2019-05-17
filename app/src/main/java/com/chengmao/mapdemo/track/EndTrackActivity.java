@@ -135,7 +135,7 @@ public class EndTrackActivity extends BaseActivity {
         }
         String signature = ACache.get(this).getAsString("signature");
         Caller.obj().load(MapApi.class).end(signature, end_location.getLongitude() + "," + end_location.getLatitude(),
-                startTrackBean.getTrail_id(), name, et_desc.getText().toString().trim(), mType + "", space, time, "1").enqueue(new Callback<String>() {
+                startTrackBean.getTrail_id() + "", name, et_desc.getText().toString().trim(), mType + "", space, time, "1").enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 Alert.obj().loaded();

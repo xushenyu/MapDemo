@@ -157,7 +157,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     private Timer timer;
     private Button btn_end;
     private LinearLayout ll_track;
-    private String trailId;
+    private int trailId;
 
     @Override
     protected int getLayoutId() {
@@ -474,7 +474,7 @@ public class MainActivity extends BaseActivity implements AMap.OnMyLocationChang
     public void fromEventBus(EndEvent event) {
         currentTime = 0;
         distance = 0;
-        trailId = "";
+        trailId = 0;
         isPausing = false;
         tv_distance.setText("0.0");
         btnStatus();

@@ -22,7 +22,7 @@ public class StartTrackBean implements Serializable {
     private int serviceId;
     private int terminalId;
     private int trackId;
-    private String trail_id;
+    private int trail_id;
     private String trail_name;
     private String start_coords;
 
@@ -58,11 +58,11 @@ public class StartTrackBean implements Serializable {
         this.trackId = trackId;
     }
 
-    public String getTrail_id() {
+    public int getTrail_id() {
         return trail_id;
     }
 
-    public void setTrail_id(String trail_id) {
+    public void setTrail_id(int trail_id) {
         this.trail_id = trail_id;
     }
 

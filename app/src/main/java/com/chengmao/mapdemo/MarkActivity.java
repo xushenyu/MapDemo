@@ -66,7 +66,7 @@ public class MarkActivity extends AppCompatActivity {
     private TextView tv_size;
     private int type_position;
     private int size_position;
-    private String trailId;
+    private int trailId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -74,7 +74,7 @@ public class MarkActivity extends AppCompatActivity {
         setContentView(R.layout.activity_mark);
         double longitude = getIntent().getDoubleExtra("longitude", 116.4417);
         double latitude = getIntent().getDoubleExtra("latitude", 39.92318);
-        trailId = getIntent().getStringExtra("trail_id");
+        trailId = getIntent().getIntExtra("trail_id", 0);
         coords = longitude + "," + latitude;
         mDoorImage = findViewById(R.id.grid_door);
         mRoomImage = findViewById(R.id.grid_room);
@@ -333,7 +333,7 @@ public class MarkActivity extends AppCompatActivity {
         map.put("type", (type_position + 1) + "");
         map.put("size", (size_position + 1) + "");
         map.put("source", "3");
-        map.put("trail_id", trailId);
+        map.put("trail_id", trailId + "");
         map.put("json", "1");
         loading.setVisibility(View.VISIBLE);
         Log.e("flag--", "submit(MarkActivity.java:224)-->>" + new JSONObject(map).toString());
@@ -359,6 +359,7 @@ public class MarkActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<String> call, Throwable t) {
                 loading.setVisibility(View.GONE);
+                Log.e("flag--", "onFailure(MarkActivity.java:362)-->>" + t.getMessage());
                 Toast.makeText(MarkActivity.this, "提交失败，请检查网络后重新提交", Toast.LENGTH_SHORT).show();
             }
         });
